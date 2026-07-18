@@ -1,0 +1,15 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "compatibilityLevel": "JAVA_21",
+  "package": "com.github.kryvii.lushgrass.client.mixin",
+  "plugin": "com.github.kryvii.lushgrass.mixin.LushGrassMixinPlugin",
+  "client": [
+    "iris.IrisBlockRendererMixin",
+    "iris.IrisWorldRenderingSettingsMixin",
+    "sodium.SodiumQuadViewMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
