@@ -14,9 +14,9 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SnowyDirtBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -33,6 +33,8 @@ public final class GrassBlockTuftModel extends ConfigurableGrassBlockModel {
     public static final int TUFT_TINT_INDEX = 0x4C47;
 
     private static final int MAX_TUFT_VARIANTS = 8192;
+    private static final int TUFT_OFFSET_SEED_X = 17;
+    private static final int TUFT_OFFSET_SEED_Z = 31;
     private static final ModelProperty<TuftVariant> TUFT_DATA = new ModelProperty<>(data -> data != null);
     private static final BlockState GRASS_BLOCK_STATE = Blocks.GRASS_BLOCK.defaultBlockState().setValue(SnowyDirtBlock.SNOWY, false);
     private static final BlockState SHORT_GRASS_STATE = Blocks.SHORT_GRASS.defaultBlockState();
@@ -88,11 +90,12 @@ public final class GrassBlockTuftModel extends ConfigurableGrassBlockModel {
 
         BlockPos tuftPos = pos.above();
         BlockState aboveState = level.getBlockState(tuftPos);
-        if (!aboveState.isAir() || !aboveState.getFluidState().isEmpty() || aboveState.is(BlockTags.SNOW)) {
+        if (Block.isShapeFullBlock(aboveState.getCollisionShape(level, tuftPos))) {
             return originalData;
         }
 
-        Vec3 offset = SHORT_GRASS_STATE.getOffset(level, tuftPos);
+        BlockPos offsetSeedPos = tuftPos.offset(TUFT_OFFSET_SEED_X, 0, TUFT_OFFSET_SEED_Z);
+        Vec3 offset = SHORT_GRASS_STATE.getOffset(level, offsetSeedPos);
         int packedLight = LevelRenderer.getLightColor(level, aboveState, tuftPos);
         TuftVariantKey key = new TuftVariantKey(offset, packedLight);
         TuftVariant variant = this.tuftVariantCache.computeIfAbsent(key, this::createTuftVariant);

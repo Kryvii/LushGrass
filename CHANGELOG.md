@@ -2,6 +2,13 @@
 
 All notable changes to Lush Grass are documented in this file.
 
+## [1.0.1] - 2026-07-19
+
+### Changed
+
+- Improved grass tuft occlusion so tufts are hidden only by full blocks.
+- Added an independent vanilla-style random offset to reduce overlap with other plants.
+
 ## [1.0.0] - 2026-07-18
 
 ### Added
