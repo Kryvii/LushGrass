@@ -1,7 +1,4 @@
 {
-  "block.lush_grass.low_grass": "低矮草丛",
-  "itemGroup.lush_grass": "茂盛草地",
-
   "lush_grass.configuration.title": "Lush Grass",
   "lush_grass.configuration.section.lush.grass.client.toml": "客户端",
   "lush_grass.configuration.section.lush.grass.client.toml.title": "%s 客户端配置",

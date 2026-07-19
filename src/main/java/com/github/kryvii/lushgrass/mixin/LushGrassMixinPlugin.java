@@ -8,26 +8,14 @@ import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 public final class LushGrassMixinPlugin implements IMixinConfigPlugin {
-    private Boolean irisBlockStateMappingsAvailable;
     private Boolean irisSodiumMaterialOverridesAvailable;
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if (mixinClassName.endsWith("IrisWorldRenderingSettingsMixin")) {
-            if (this.irisBlockStateMappingsAvailable == null) {
-                this.irisBlockStateMappingsAvailable = supportsIrisBlockStateMappings();
-            }
-            return this.irisBlockStateMappingsAvailable;
-        }
-
         if (this.irisSodiumMaterialOverridesAvailable == null) {
             this.irisSodiumMaterialOverridesAvailable = supportsIrisSodiumMaterialOverrides();
         }
         return this.irisSodiumMaterialOverridesAvailable;
-    }
-
-    private static boolean supportsIrisBlockStateMappings() {
-        return hasClassResource("net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings");
     }
 
     private static boolean supportsIrisSodiumMaterialOverrides() {

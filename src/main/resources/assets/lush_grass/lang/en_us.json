@@ -1,7 +1,4 @@
 {
-  "block.lush_grass.low_grass": "Low Grass",
-  "itemGroup.lush_grass": "Lush Grass",
-
   "lush_grass.configuration.title": "Lush Grass",
   "lush_grass.configuration.section.lush.grass.client.toml": "Client",
   "lush_grass.configuration.section.lush.grass.client.toml.title": "%s Client Configuration",

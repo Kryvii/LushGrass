@@ -6,7 +6,6 @@
   "plugin": "com.github.kryvii.lushgrass.mixin.LushGrassMixinPlugin",
   "client": [
     "iris.IrisBlockRendererMixin",
-    "iris.IrisWorldRenderingSettingsMixin",
     "sodium.SodiumQuadViewMixin"
   ],
   "injectors": {
