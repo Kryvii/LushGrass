@@ -36,6 +36,5 @@ Changing either option refreshes the affected chunks.
 
 ## License
 
-- Source code: [BSD 3-Clause](LICENSE)
-- Original non-code assets: [CC BY-NC-SA 4.0](LICENSE-ASSETS)
+- Lush Grass is licensed under the [MIT License](LICENSE).
 - Third-party notices: [NOTICE](NOTICE)
