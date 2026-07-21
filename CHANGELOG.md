@@ -9,7 +9,7 @@ All notable changes to Lush Grass are documented in this file.
 - Configurable full-coverage models for normal and snowy vanilla grass blocks.
 - Cached, biome-tinted grass tufts on unobstructed grass blocks.
 - Full-block tuft occlusion checks and vanilla-style random tuft offsets.
-- Optional Iris/Sodium shader material compatibility for plant movement.
+- Optional Iris/Oculus/Sodium shader material compatibility for plant movement.
 - English and Simplified Chinese localization.
 - Forge client configuration file integration.
 

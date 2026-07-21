@@ -21,6 +21,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(targets = "net.caffeinemc.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderer", remap = false)
 public abstract class IrisBlockRendererMixin {
     @Unique
+    private static final String[] WORLD_SETTINGS_CLASSES = {
+            "net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings",
+            "net.coderbot.iris.shaderpack.materialmap.WorldRenderingSettings",
+            "net.coderbot.iris.block_rendering.BlockRenderingSettings"
+    };
+
+    @Unique
+    private static final String[] VERTEX_ENCODER_CLASSES = {
+            "net.irisshaders.iris.vertices.sodium.terrain.VertexEncoderInterface",
+            "net.coderbot.iris.vertices.sodium.terrain.VertexEncoderInterface"
+    };
+
+    @Unique
     private static Object lushGrass$worldRenderingSettings;
 
     @Unique
@@ -109,11 +122,7 @@ public abstract class IrisBlockRendererMixin {
         try {
             if (lushGrass$getBlockStateIds == null || lushGrass$worldRenderingSettings == null) {
                 ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-                Class<?> settingsClass = Class.forName(
-                        "net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings",
-                        false,
-                        classLoader
-                );
+                Class<?> settingsClass = lushGrass$findClass(classLoader, WORLD_SETTINGS_CLASSES);
                 Field instance = settingsClass.getField("INSTANCE");
                 lushGrass$worldRenderingSettings = instance.get(null);
                 lushGrass$getBlockStateIds = settingsClass.getMethod("getBlockStateIds");
@@ -130,11 +139,7 @@ public abstract class IrisBlockRendererMixin {
         try {
             if (lushGrass$overrideBlock == null) {
                 ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-                Class<?> vertexEncoder = Class.forName(
-                        "net.irisshaders.iris.vertices.sodium.terrain.VertexEncoderInterface",
-                        false,
-                        classLoader
-                );
+                Class<?> vertexEncoder = lushGrass$findClass(classLoader, VERTEX_ENCODER_CLASSES);
                 lushGrass$overrideBlock = vertexEncoder.getMethod("overrideBlock", int.class);
             }
 
@@ -150,11 +155,7 @@ public abstract class IrisBlockRendererMixin {
         try {
             if (lushGrass$restoreBlock == null) {
                 ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-                Class<?> vertexEncoder = Class.forName(
-                        "net.irisshaders.iris.vertices.sodium.terrain.VertexEncoderInterface",
-                        false,
-                        classLoader
-                );
+                Class<?> vertexEncoder = lushGrass$findClass(classLoader, VERTEX_ENCODER_CLASSES);
                 lushGrass$restoreBlock = vertexEncoder.getMethod("restoreBlock");
             }
 
@@ -162,5 +163,19 @@ public abstract class IrisBlockRendererMixin {
         } catch (ReflectiveOperationException | LinkageError ignored) {
             // Optional Iris compatibility; rendering should continue if this hook is unavailable.
         }
+    }
+
+    @Unique
+    private static Class<?> lushGrass$findClass(ClassLoader classLoader, String[] classNames)
+            throws ClassNotFoundException {
+        ClassNotFoundException missing = null;
+        for (String className : classNames) {
+            try {
+                return Class.forName(className, false, classLoader);
+            } catch (ClassNotFoundException exception) {
+                missing = exception;
+            }
+        }
+        throw missing == null ? new ClassNotFoundException() : missing;
     }
 }

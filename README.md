@@ -18,10 +18,14 @@ Lush Grass is a lightweight, vanilla-style client visual mod for Minecraft
 ## Requirements
 
 - Minecraft 1.20.1
-- Forge 47.4.21 or newer for Minecraft 1.20.1
+- Forge 47.2.0 or newer for Minecraft 1.20.1
 - Java 17
 
 Server installation is not required.
+
+Oculus and Embeddium are optional. When both are installed, Lush Grass keeps the
+additional grass geometry shader-aware where the available Oculus/Sodium hooks
+support per-quad material overrides.
 
 ## Configuration
 
