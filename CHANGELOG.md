@@ -3,5 +3,4 @@
 ## [1.0.0] - 2026-07-21
 
 - Ported Lush Grass to Forge 1.20.1 as a client-only mod.
-- Added configurable connected and snowy grass coverage with grass tufts.
 - Added optional Oculus and Embeddium shader compatibility.
