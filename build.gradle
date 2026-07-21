@@ -1,13 +1,11 @@
 plugins {
     id 'java-library'
-    id 'net.minecraftforge.gradle' version '6.0.54'
+    id 'fabric-loom' version '1.7.4'
     id 'idea'
 }
 
 group = mod_group_id
-version = project.findProperty('artifact_version_suffix')
-        ? "${mod_version}-${artifact_version_suffix}"
-        : mod_version
+version = "${mod_version}-${artifact_version_suffix}"
 
 base {
     archivesName = mod_id
@@ -15,38 +13,14 @@ base {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-minecraft {
-    mappings channel: 'official', version: minecraft_version
-    copyIdeResources = true
-
+loom {
     runs {
-        configureEach {
-            workingDirectory project.file('run')
-
-            args '--mixin', 'lush_grass.client.mixins.json'
-
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'info'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile',
-                    file("${buildDir}/createSrgToMcp/output.srg").absolutePath
-
-            mods {
-                "${mod_id}" {
-                    source sourceSets.main
-                }
-            }
+        client {
+            client()
+            runDir 'run/fabric'
+            ideConfigGenerated = true
         }
-
-        client {}
-        server {}
     }
-}
-
-sourceSets.main.resources {
-    srcDir 'src/generated/resources'
-    exclude '.cache/**'
-    exclude '**/*.bbmodel'
 }
 
 tasks.withType(ProcessResources).configureEach {
@@ -55,19 +29,22 @@ tasks.withType(ProcessResources).configureEach {
 
 repositories {
     maven {
-        url = 'https://cursemaven.com'
+        url = 'https://maven.fabricmc.net/'
+    }
+    maven {
+        url = 'https://api.modrinth.com/maven'
         content {
-            includeGroup 'curse.maven'
+            includeGroup 'maven.modrinth'
         }
     }
 }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-
-    compileOnly fg.deobf("curse.maven:embeddium-908741:${embeddium_curseforge_file_id}")
-    runtimeOnly fg.deobf("curse.maven:embeddium-908741:${embeddium_curseforge_file_id}")
-    runtimeOnly fg.deobf("curse.maven:oculus-581495:${oculus_curseforge_file_id}")
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    modImplementation "maven.modrinth:mOgUt4GM:${modmenu_version_id}"
 }
 
 tasks.withType(Jar).configureEach {
@@ -85,14 +62,9 @@ tasks.withType(Jar).configureEach {
                 'Specification-Version' : mod_version,
                 'Implementation-Title'  : mod_name,
                 'Implementation-Vendor' : mod_authors,
-                'Implementation-Version': mod_version,
-                'MixinConfigs'          : 'lush_grass.client.mixins.json'
+                'Implementation-Version': mod_version
         ])
     }
-}
-
-tasks.named('jar', Jar).configure {
-    finalizedBy 'reobfJar'
 }
 
 tasks.withType(JavaCompile).configureEach {

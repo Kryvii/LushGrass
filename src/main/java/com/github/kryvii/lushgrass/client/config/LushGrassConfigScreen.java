@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 public final class LushGrassConfigScreen extends Screen {
     private static final Component MOD_NAME = Component.translatable("lush_grass.configuration.title");
     private static final Component TITLE = Component.translatable(
-            "lush_grass.configuration.section.lush.grass.client.toml.title",
+            "lush_grass.configuration.client.title",
             MOD_NAME
     );
     private static final Component VISUALS = Component.translatable("lush_grass.configuration.visuals");

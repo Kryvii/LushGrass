@@ -1,7 +1,6 @@
 {
   "lush_grass.configuration.title": "Lush Grass",
-  "lush_grass.configuration.section.lush.grass.client.toml": "Client",
-  "lush_grass.configuration.section.lush.grass.client.toml.title": "%s Client Configuration",
+  "lush_grass.configuration.client.title": "%s Client Configuration",
   "lush_grass.configuration.visuals": "Visuals",
   "lush_grass.configuration.visuals.button": "Edit",
   "lush_grass.configuration.visuals.tooltip": "Visual rendering settings.",

@@ -1,15 +1,14 @@
 package com.github.kryvii.lushgrass.client.model;
 
+import com.github.kryvii.lushgrass.config.ClientConfig;
+import com.google.common.cache.CacheBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
-
-import com.github.kryvii.lushgrass.config.ClientConfig;
-import com.google.common.cache.CacheBuilder;
-import com.mojang.math.Transformation;
-
+import java.util.function.Supplier;
+import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
+import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
@@ -21,188 +20,161 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SnowyDirtBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.ChunkRenderTypeSet;
-import net.minecraftforge.client.model.QuadTransformers;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.client.model.data.ModelProperty;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
 
 public final class GrassBlockTuftModel extends ConfigurableGrassBlockModel {
     public static final int TUFT_TINT_INDEX = 0x4C47;
 
-    private static final int MAX_TUFT_VARIANTS = 8192;
     private static final int TUFT_OFFSET_SEED_X = 17;
     private static final int TUFT_OFFSET_SEED_Z = 31;
-    private static final ModelProperty<TuftVariant> TUFT_DATA = new ModelProperty<>(data -> data != null);
-    private static final BlockState GRASS_BLOCK_STATE = Blocks.GRASS_BLOCK.defaultBlockState().setValue(SnowyDirtBlock.SNOWY, false);
+    private static final float TUFT_HEIGHT_SCALE = 0.4375F;
+    private static final int MAX_TUFT_VARIANTS = 8192;
     private static final BlockState SHORT_GRASS_STATE = Blocks.GRASS.defaultBlockState();
 
+    private final BakedModel tuftModel;
     private final List<BakedQuad> tuftTemplateQuads;
-    private final ChunkRenderTypeSet fullCoverageRenderTypes;
-    private final ChunkRenderTypeSet vanillaRenderTypes;
-    private final ChunkRenderTypeSet tuftRenderTypes;
-    private final ChunkRenderTypeSet combinedFullCoverageRenderTypes;
-    private final ChunkRenderTypeSet combinedVanillaRenderTypes;
-    private final ConcurrentMap<TuftVariantKey, TuftVariant> tuftVariantCache = CacheBuilder.newBuilder()
+    private final ConcurrentMap<TuftVariantKey, List<BakedQuad>> tuftVariantCache = CacheBuilder.newBuilder()
             .maximumSize(MAX_TUFT_VARIANTS)
-            .<TuftVariantKey, TuftVariant>build()
+            .<TuftVariantKey, List<BakedQuad>>build()
             .asMap();
+    private final ThreadLocal<SodiumRenderContext> sodiumRenderContext = new ThreadLocal<>();
 
-    public GrassBlockTuftModel(
-            BakedModel fullCoverageModel,
-            BakedModel vanillaModel,
-            BakedModel shortGrassModel
-    ) {
+    public GrassBlockTuftModel(BakedModel fullCoverageModel, BakedModel vanillaModel, BakedModel tuftModel) {
         super(fullCoverageModel, vanillaModel);
-        this.tuftTemplateQuads = shortGrassModel
-                .getQuads(SHORT_GRASS_STATE, null, RandomSource.create(42L), ModelData.EMPTY, null)
-                .stream()
-                .map(GrassBlockTuftModel::markTuftQuad)
-                .toList();
-        this.fullCoverageRenderTypes = fullCoverageModel.getRenderTypes(
-                GRASS_BLOCK_STATE,
-                RandomSource.create(42L),
-                ModelData.EMPTY
+        this.tuftModel = tuftModel;
+        this.tuftTemplateQuads = List.copyOf(
+                tuftModel.getQuads(SHORT_GRASS_STATE, null, RandomSource.create(42L))
         );
-        this.vanillaRenderTypes = vanillaModel.getRenderTypes(
-                GRASS_BLOCK_STATE,
-                RandomSource.create(42L),
-                ModelData.EMPTY
-        );
-        this.tuftRenderTypes = shortGrassModel.getRenderTypes(SHORT_GRASS_STATE, RandomSource.create(42L), ModelData.EMPTY);
-        this.combinedFullCoverageRenderTypes =
-                ChunkRenderTypeSet.union(this.fullCoverageRenderTypes, this.tuftRenderTypes);
-        this.combinedVanillaRenderTypes =
-                ChunkRenderTypeSet.union(this.vanillaRenderTypes, this.tuftRenderTypes);
     }
 
     @Override
-    public ModelData getModelData(BlockAndTintGetter level, BlockPos pos, BlockState state, ModelData modelData) {
-        ModelData originalData = this.activeModel().getModelData(level, pos, state, modelData);
-        if (!ClientConfig.RENDER_GRASS_TUFTS.get()
-                || state == null
-                || !state.is(Blocks.GRASS_BLOCK)
-                || state.getValue(SnowyDirtBlock.SNOWY)) {
-            return originalData;
-        }
-
-        BlockPos tuftPos = pos.above();
-        BlockState aboveState = level.getBlockState(tuftPos);
-        if (Block.isShapeFullBlock(aboveState.getCollisionShape(level, tuftPos))) {
-            return originalData;
-        }
-
-        BlockPos offsetSeedPos = tuftPos.offset(TUFT_OFFSET_SEED_X, 0, TUFT_OFFSET_SEED_Z);
-        Vec3 offset = SHORT_GRASS_STATE.getOffset(level, offsetSeedPos);
-        int packedLight = LevelRenderer.getLightColor(level, aboveState, tuftPos);
-        TuftVariantKey key = new TuftVariantKey(offset, packedLight);
-        TuftVariant variant = this.tuftVariantCache.computeIfAbsent(key, this::createTuftVariant);
-        return originalData == ModelData.EMPTY
-                ? variant.modelData()
-                : originalData.derive().with(TUFT_DATA, variant).build();
-    }
-
-    @Override
-    public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
-        if (ClientConfig.FULL_GRASS_BLOCK_COVERAGE.get()) {
-            return ClientConfig.RENDER_GRASS_TUFTS.get() && data.has(TUFT_DATA)
-                    ? this.combinedFullCoverageRenderTypes
-                    : this.fullCoverageRenderTypes;
-        }
-
-        return ClientConfig.RENDER_GRASS_TUFTS.get() && data.has(TUFT_DATA)
-                ? this.combinedVanillaRenderTypes
-                : this.vanillaRenderTypes;
-    }
-
-    @Override
-    public boolean useAmbientOcclusion(BlockState state, RenderType renderType) {
-        ChunkRenderTypeSet baseRenderTypes = ClientConfig.FULL_GRASS_BLOCK_COVERAGE.get()
-                ? this.fullCoverageRenderTypes
-                : this.vanillaRenderTypes;
-        if (renderType != null && this.tuftRenderTypes.contains(renderType) && !baseRenderTypes.contains(renderType)) {
-            return false;
-        }
-
-        return this.activeModel().useAmbientOcclusion(state, renderType);
-    }
-
-    @Override
-    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData extraData, @Nullable RenderType renderType) {
-        ChunkRenderTypeSet baseRenderTypes = ClientConfig.FULL_GRASS_BLOCK_COVERAGE.get()
-                ? this.fullCoverageRenderTypes
-                : this.vanillaRenderTypes;
-        List<BakedQuad> baseQuads = renderType == null || baseRenderTypes.contains(renderType)
-                ? this.activeModel().getQuads(state, side, rand, extraData, renderType)
-                : List.of();
-        TuftVariant variant = extraData.get(TUFT_DATA);
-        if (side != null
-                || variant == null
-                || !ClientConfig.RENDER_GRASS_TUFTS.get()
-                || renderType != null && !this.tuftRenderTypes.contains(renderType)) {
+    public List<BakedQuad> getQuads(
+            @Nullable BlockState state,
+            @Nullable Direction side,
+            RandomSource random
+    ) {
+        List<BakedQuad> baseQuads = super.getQuads(state, side, random);
+        SodiumRenderContext context = this.sodiumRenderContext.get();
+        if (side != null || context == null || !shouldRenderTuft(context.blockView(), context.state(), context.pos())) {
             return baseQuads;
         }
 
-        List<BakedQuad> tuftQuads = variant.quads();
+        List<BakedQuad> tuftQuads = this.getTuftQuads(context.blockView(), context.pos());
         if (baseQuads.isEmpty()) {
             return tuftQuads;
         }
-        if (tuftQuads.isEmpty()) {
-            return baseQuads;
-        }
-
         List<BakedQuad> combined = new ArrayList<>(baseQuads.size() + tuftQuads.size());
         combined.addAll(baseQuads);
         combined.addAll(tuftQuads);
         return combined;
     }
 
-    private TuftVariant createTuftVariant(TuftVariantKey key) {
-        Vec3 offset = key.offset();
-        Transformation translation = new Transformation(
-                new Vector3f((float)offset.x, (float)(1.0D + offset.y), (float)offset.z),
-                null,
-                new Vector3f(1.0F, 0.4375F, 1.0F),
-                null
-        );
-        List<BakedQuad> quads = List.copyOf(
-                QuadTransformers.applying(translation)
-                        .andThen(QuadTransformers.applyingLightmap(key.packedLight()))
-                        .process(this.tuftTemplateQuads)
-        );
-        return new TuftVariant(quads);
+    @Override
+    public void emitBlockQuads(
+            BlockAndTintGetter blockView,
+            BlockState state,
+            BlockPos pos,
+            Supplier<RandomSource> randomSupplier,
+            RenderContext context
+    ) {
+        emitModel(this.activeModel(), state, context);
+        if (!shouldRenderTuft(blockView, state, pos)) {
+            return;
+        }
+
+        BlockPos tuftPos = pos.above();
+        BlockState aboveState = blockView.getBlockState(tuftPos);
+        BlockPos offsetSeedPos = tuftPos.offset(TUFT_OFFSET_SEED_X, 0, TUFT_OFFSET_SEED_Z);
+        Vec3 offset = SHORT_GRASS_STATE.getOffset(blockView, offsetSeedPos);
+        int packedLight = LevelRenderer.getLightColor(blockView, aboveState, tuftPos);
+
+        context.pushTransform(quad -> transformTuftQuad(quad, offset, packedLight));
+        try {
+            emitModel(this.tuftModel, SHORT_GRASS_STATE, context);
+        } finally {
+            context.popTransform();
+        }
     }
 
-    private static BakedQuad markTuftQuad(BakedQuad quad) {
-        return new BakedQuad(
-                quad.getVertices().clone(),
-                TUFT_TINT_INDEX,
-                quad.getDirection(),
-                quad.getSprite(),
-                quad.isShade(),
-                quad.hasAmbientOcclusion()
+    private static boolean shouldRenderTuft(BlockAndTintGetter blockView, BlockState state, BlockPos pos) {
+        if (!ClientConfig.renderGrassTufts()
+                || !state.is(Blocks.GRASS_BLOCK)
+                || state.getValue(SnowyDirtBlock.SNOWY)) {
+            return false;
+        }
+
+        BlockPos tuftPos = pos.above();
+        BlockState aboveState = blockView.getBlockState(tuftPos);
+        return !Block.isShapeFullBlock(aboveState.getCollisionShape(blockView, tuftPos));
+    }
+
+    private static boolean transformTuftQuad(MutableQuadView quad, Vec3 offset, int packedLight) {
+        for (int vertex = 0; vertex < 4; vertex++) {
+            quad.pos(
+                    vertex,
+                    quad.x(vertex) + (float) offset.x,
+                    quad.y(vertex) * TUFT_HEIGHT_SCALE + (float) (1.0D + offset.y),
+                    quad.z(vertex) + (float) offset.z
+            );
+            quad.lightmap(vertex, packedLight);
+        }
+        quad.colorIndex(TUFT_TINT_INDEX);
+        return true;
+    }
+
+    public void beginSodiumRender(BlockAndTintGetter blockView, BlockState state, BlockPos pos) {
+        this.sodiumRenderContext.set(new SodiumRenderContext(blockView, state, pos.immutable()));
+    }
+
+    public void endSodiumRender() {
+        this.sodiumRenderContext.remove();
+    }
+
+    private List<BakedQuad> getTuftQuads(BlockAndTintGetter blockView, BlockPos pos) {
+        BlockPos tuftPos = pos.above();
+        BlockState aboveState = blockView.getBlockState(tuftPos);
+        BlockPos offsetSeedPos = tuftPos.offset(TUFT_OFFSET_SEED_X, 0, TUFT_OFFSET_SEED_Z);
+        Vec3 offset = SHORT_GRASS_STATE.getOffset(blockView, offsetSeedPos);
+        int packedLight = LevelRenderer.getLightColor(blockView, aboveState, tuftPos);
+        return this.tuftVariantCache.computeIfAbsent(
+                new TuftVariantKey(offset, packedLight),
+                this::createTuftVariant
         );
+    }
+
+    private List<BakedQuad> createTuftVariant(TuftVariantKey key) {
+        List<BakedQuad> quads = new ArrayList<>(this.tuftTemplateQuads.size());
+        for (BakedQuad quad : this.tuftTemplateQuads) {
+            int[] vertices = quad.getVertices().clone();
+            int stride = vertices.length / 4;
+            for (int vertex = 0; vertex < 4; vertex++) {
+                int offset = vertex * stride;
+                float x = Float.intBitsToFloat(vertices[offset]);
+                float y = Float.intBitsToFloat(vertices[offset + 1]);
+                float z = Float.intBitsToFloat(vertices[offset + 2]);
+                vertices[offset] = Float.floatToRawIntBits(x + (float) key.offset().x);
+                vertices[offset + 1] = Float.floatToRawIntBits(
+                        y * TUFT_HEIGHT_SCALE + (float) (1.0D + key.offset().y)
+                );
+                vertices[offset + 2] = Float.floatToRawIntBits(z + (float) key.offset().z);
+                if (stride > 6) {
+                    vertices[offset + 6] = key.packedLight();
+                }
+            }
+            quads.add(new BakedQuad(
+                    vertices,
+                    TUFT_TINT_INDEX,
+                    quad.getDirection(),
+                    quad.getSprite(),
+                    quad.isShade()
+            ));
+        }
+        return List.copyOf(quads);
+    }
+
+    private record SodiumRenderContext(BlockAndTintGetter blockView, BlockState state, BlockPos pos) {
     }
 
     private record TuftVariantKey(Vec3 offset, int packedLight) {
-    }
-
-    private static final class TuftVariant {
-        private final List<BakedQuad> quads;
-        private final ModelData modelData;
-
-        private TuftVariant(List<BakedQuad> quads) {
-            this.quads = quads;
-            this.modelData = ModelData.builder().with(TUFT_DATA, this).build();
-        }
-
-        private List<BakedQuad> quads() {
-            return this.quads;
-        }
-
-        private ModelData modelData() {
-            return this.modelData;
-        }
     }
 }

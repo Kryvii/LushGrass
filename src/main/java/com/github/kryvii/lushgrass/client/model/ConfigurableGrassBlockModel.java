@@ -1,9 +1,11 @@
 package com.github.kryvii.lushgrass.client.model;
 
 import com.github.kryvii.lushgrass.config.ClientConfig;
-import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.List;
-import net.minecraft.client.renderer.RenderType;
+import java.util.function.Supplier;
+import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
+import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -12,43 +14,35 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.ChunkRenderTypeSet;
-import net.minecraftforge.client.model.BakedModelWrapper;
-import net.minecraftforge.client.model.data.ModelData;
 import org.jetbrains.annotations.Nullable;
 
-@SuppressWarnings("deprecation")
-public class ConfigurableGrassBlockModel extends BakedModelWrapper<BakedModel> {
+@SuppressWarnings({"deprecation", "removal"})
+public class ConfigurableGrassBlockModel implements BakedModel, FabricBakedModel {
+    private static final boolean SODIUM_LOADED = FabricLoader.getInstance().isModLoaded("sodium");
+
     private final BakedModel fullCoverageModel;
+    private final BakedModel vanillaModel;
 
     public ConfigurableGrassBlockModel(BakedModel fullCoverageModel, BakedModel vanillaModel) {
-        super(vanillaModel);
         this.fullCoverageModel = fullCoverageModel;
+        this.vanillaModel = vanillaModel;
     }
 
     protected final BakedModel activeModel() {
-        return ClientConfig.FULL_GRASS_BLOCK_COVERAGE.get()
-                ? this.fullCoverageModel
-                : this.originalModel;
+        return ClientConfig.fullGrassBlockCoverage() ? this.fullCoverageModel : this.vanillaModel;
     }
 
     @Override
-    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        return this.activeModel().getQuads(state, side, rand);
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource random) {
+        return this.activeModel().getQuads(state, side, random);
     }
 
     @Override
     public boolean useAmbientOcclusion() {
         return this.activeModel().useAmbientOcclusion();
-    }
-
-    @Override
-    public boolean useAmbientOcclusion(BlockState state, RenderType renderType) {
-        return this.activeModel().useAmbientOcclusion(state, renderType);
     }
 
     @Override
@@ -82,48 +76,27 @@ public class ConfigurableGrassBlockModel extends BakedModelWrapper<BakedModel> {
     }
 
     @Override
-    public BakedModel applyTransform(ItemDisplayContext displayContext, PoseStack poseStack, boolean leftHand) {
-        return this.activeModel().applyTransform(displayContext, poseStack, leftHand);
+    public boolean isVanillaAdapter() {
+        return SODIUM_LOADED;
     }
 
     @Override
-    public TextureAtlasSprite getParticleIcon(ModelData data) {
-        return this.activeModel().getParticleIcon(data);
-    }
-
-    @Override
-    public List<BakedQuad> getQuads(
-            @Nullable BlockState state,
-            @Nullable Direction side,
-            RandomSource rand,
-            ModelData extraData,
-            @Nullable RenderType renderType
-    ) {
-        return this.activeModel().getQuads(state, side, rand, extraData, renderType);
-    }
-
-    @Override
-    public ModelData getModelData(
-            BlockAndTintGetter level,
-            BlockPos pos,
+    public void emitBlockQuads(
+            BlockAndTintGetter blockView,
             BlockState state,
-            ModelData modelData
+            BlockPos pos,
+            Supplier<RandomSource> randomSupplier,
+            RenderContext context
     ) {
-        return this.activeModel().getModelData(level, pos, state, modelData);
+        emitModel(this.activeModel(), state, context);
     }
 
     @Override
-    public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
-        return this.activeModel().getRenderTypes(state, rand, data);
+    public void emitItemQuads(ItemStack stack, Supplier<RandomSource> randomSupplier, RenderContext context) {
+        context.fallbackConsumer().accept(this.activeModel());
     }
 
-    @Override
-    public List<RenderType> getRenderTypes(ItemStack itemStack, boolean fabulous) {
-        return this.activeModel().getRenderTypes(itemStack, fabulous);
-    }
-
-    @Override
-    public List<BakedModel> getRenderPasses(ItemStack itemStack, boolean fabulous) {
-        return this.activeModel().getRenderPasses(itemStack, fabulous);
+    protected static void emitModel(BakedModel model, @Nullable BlockState state, RenderContext context) {
+        context.bakedModelConsumer().accept(model, state);
     }
 }

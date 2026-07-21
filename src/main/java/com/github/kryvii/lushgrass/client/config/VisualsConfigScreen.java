@@ -28,8 +28,8 @@ final class VisualsConfigScreen extends Screen {
     VisualsConfigScreen(Screen parent) {
         super(TITLE);
         this.parent = parent;
-        this.fullCoverage = ClientConfig.FULL_GRASS_BLOCK_COVERAGE.get();
-        this.grassTufts = ClientConfig.RENDER_GRASS_TUFTS.get();
+        this.fullCoverage = ClientConfig.fullGrassBlockCoverage();
+        this.grassTufts = ClientConfig.renderGrassTufts();
     }
 
     @Override
@@ -53,13 +53,9 @@ final class VisualsConfigScreen extends Screen {
 
     @Override
     public void onClose() {
-        boolean changed = this.fullCoverage != ClientConfig.FULL_GRASS_BLOCK_COVERAGE.get()
-                || this.grassTufts != ClientConfig.RENDER_GRASS_TUFTS.get();
-        if (changed) {
-            ClientConfig.FULL_GRASS_BLOCK_COVERAGE.set(this.fullCoverage);
-            ClientConfig.RENDER_GRASS_TUFTS.set(this.grassTufts);
-            ClientConfig.FULL_GRASS_BLOCK_COVERAGE.save();
-            ClientConfigEvents.refreshRendererIfChanged();
+        if (ClientConfig.update(this.fullCoverage, this.grassTufts)) {
+            ClientConfig.save();
+            ClientConfigEvents.refreshRenderer();
         }
 
         if (this.minecraft != null) {
