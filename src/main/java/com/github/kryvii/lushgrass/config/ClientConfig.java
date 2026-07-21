@@ -1,15 +1,15 @@
 package com.github.kryvii.lushgrass.config;
 
 import com.github.kryvii.lushgrass.LushGrass;
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 public final class ClientConfig {
     private static final String TRANSLATION_PREFIX = LushGrass.MOD_ID + ".configuration.visuals";
-    private static final ModConfigSpec.Builder CLIENT_BUILDER = new ModConfigSpec.Builder();
+    private static final ForgeConfigSpec.Builder CLIENT_BUILDER = new ForgeConfigSpec.Builder();
 
-    public static final ModConfigSpec.BooleanValue FULL_GRASS_BLOCK_COVERAGE;
-    public static final ModConfigSpec.BooleanValue RENDER_GRASS_TUFTS;
-    public static final ModConfigSpec CLIENT_SPEC;
+    public static final ForgeConfigSpec.BooleanValue FULL_GRASS_BLOCK_COVERAGE;
+    public static final ForgeConfigSpec.BooleanValue RENDER_GRASS_TUFTS;
+    public static final ForgeConfigSpec CLIENT_SPEC;
 
     static {
         CLIENT_BUILDER

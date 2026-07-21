@@ -16,10 +16,9 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
-import net.neoforged.neoforge.client.model.BakedModelWrapper;
-import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.common.util.TriState;
+import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.model.BakedModelWrapper;
+import net.minecraftforge.client.model.data.ModelData;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("deprecation")
@@ -32,7 +31,7 @@ public class ConfigurableGrassBlockModel extends BakedModelWrapper<BakedModel> {
     }
 
     protected final BakedModel activeModel() {
-        return ClientConfig.FULL_GRASS_BLOCK_COVERAGE.getAsBoolean()
+        return ClientConfig.FULL_GRASS_BLOCK_COVERAGE.get()
                 ? this.fullCoverageModel
                 : this.originalModel;
     }
@@ -48,8 +47,8 @@ public class ConfigurableGrassBlockModel extends BakedModelWrapper<BakedModel> {
     }
 
     @Override
-    public TriState useAmbientOcclusion(BlockState state, ModelData data, RenderType renderType) {
-        return this.activeModel().useAmbientOcclusion(state, data, renderType);
+    public boolean useAmbientOcclusion(BlockState state, RenderType renderType) {
+        return this.activeModel().useAmbientOcclusion(state, renderType);
     }
 
     @Override

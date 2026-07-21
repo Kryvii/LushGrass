@@ -21,11 +21,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SnowyDirtBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
-import net.neoforged.neoforge.client.model.QuadTransformers;
-import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.client.model.data.ModelProperty;
-import net.neoforged.neoforge.common.util.TriState;
+import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.model.QuadTransformers;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
@@ -37,7 +36,7 @@ public final class GrassBlockTuftModel extends ConfigurableGrassBlockModel {
     private static final int TUFT_OFFSET_SEED_Z = 31;
     private static final ModelProperty<TuftVariant> TUFT_DATA = new ModelProperty<>(data -> data != null);
     private static final BlockState GRASS_BLOCK_STATE = Blocks.GRASS_BLOCK.defaultBlockState().setValue(SnowyDirtBlock.SNOWY, false);
-    private static final BlockState SHORT_GRASS_STATE = Blocks.SHORT_GRASS.defaultBlockState();
+    private static final BlockState SHORT_GRASS_STATE = Blocks.GRASS.defaultBlockState();
 
     private final List<BakedQuad> tuftTemplateQuads;
     private final ChunkRenderTypeSet fullCoverageRenderTypes;
@@ -81,7 +80,7 @@ public final class GrassBlockTuftModel extends ConfigurableGrassBlockModel {
     @Override
     public ModelData getModelData(BlockAndTintGetter level, BlockPos pos, BlockState state, ModelData modelData) {
         ModelData originalData = this.activeModel().getModelData(level, pos, state, modelData);
-        if (!ClientConfig.RENDER_GRASS_TUFTS.getAsBoolean()
+        if (!ClientConfig.RENDER_GRASS_TUFTS.get()
                 || state == null
                 || !state.is(Blocks.GRASS_BLOCK)
                 || state.getValue(SnowyDirtBlock.SNOWY)) {
@@ -106,32 +105,32 @@ public final class GrassBlockTuftModel extends ConfigurableGrassBlockModel {
 
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
-        if (ClientConfig.FULL_GRASS_BLOCK_COVERAGE.getAsBoolean()) {
-            return ClientConfig.RENDER_GRASS_TUFTS.getAsBoolean() && data.has(TUFT_DATA)
+        if (ClientConfig.FULL_GRASS_BLOCK_COVERAGE.get()) {
+            return ClientConfig.RENDER_GRASS_TUFTS.get() && data.has(TUFT_DATA)
                     ? this.combinedFullCoverageRenderTypes
                     : this.fullCoverageRenderTypes;
         }
 
-        return ClientConfig.RENDER_GRASS_TUFTS.getAsBoolean() && data.has(TUFT_DATA)
+        return ClientConfig.RENDER_GRASS_TUFTS.get() && data.has(TUFT_DATA)
                 ? this.combinedVanillaRenderTypes
                 : this.vanillaRenderTypes;
     }
 
     @Override
-    public TriState useAmbientOcclusion(BlockState state, ModelData data, RenderType renderType) {
-        ChunkRenderTypeSet baseRenderTypes = ClientConfig.FULL_GRASS_BLOCK_COVERAGE.getAsBoolean()
+    public boolean useAmbientOcclusion(BlockState state, RenderType renderType) {
+        ChunkRenderTypeSet baseRenderTypes = ClientConfig.FULL_GRASS_BLOCK_COVERAGE.get()
                 ? this.fullCoverageRenderTypes
                 : this.vanillaRenderTypes;
         if (renderType != null && this.tuftRenderTypes.contains(renderType) && !baseRenderTypes.contains(renderType)) {
-            return TriState.FALSE;
+            return false;
         }
 
-        return this.activeModel().useAmbientOcclusion(state, data, renderType);
+        return this.activeModel().useAmbientOcclusion(state, renderType);
     }
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData extraData, @Nullable RenderType renderType) {
-        ChunkRenderTypeSet baseRenderTypes = ClientConfig.FULL_GRASS_BLOCK_COVERAGE.getAsBoolean()
+        ChunkRenderTypeSet baseRenderTypes = ClientConfig.FULL_GRASS_BLOCK_COVERAGE.get()
                 ? this.fullCoverageRenderTypes
                 : this.vanillaRenderTypes;
         List<BakedQuad> baseQuads = renderType == null || baseRenderTypes.contains(renderType)
@@ -140,7 +139,7 @@ public final class GrassBlockTuftModel extends ConfigurableGrassBlockModel {
         TuftVariant variant = extraData.get(TUFT_DATA);
         if (side != null
                 || variant == null
-                || !ClientConfig.RENDER_GRASS_TUFTS.getAsBoolean()
+                || !ClientConfig.RENDER_GRASS_TUFTS.get()
                 || renderType != null && !this.tuftRenderTypes.contains(renderType)) {
             return baseQuads;
         }
@@ -195,7 +194,7 @@ public final class GrassBlockTuftModel extends ConfigurableGrassBlockModel {
 
         private TuftVariant(List<BakedQuad> quads) {
             this.quads = quads;
-            this.modelData = ModelData.of(TUFT_DATA, this);
+            this.modelData = ModelData.builder().with(TUFT_DATA, this).build();
         }
 
         private List<BakedQuad> quads() {

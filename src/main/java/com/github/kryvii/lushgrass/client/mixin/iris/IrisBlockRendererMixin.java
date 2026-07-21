@@ -3,8 +3,8 @@ package com.github.kryvii.lushgrass.client.mixin.iris;
 import com.github.kryvii.lushgrass.client.compat.sodium.QuadTintIndexAccess;
 import com.github.kryvii.lushgrass.client.model.GrassBlockTuftModel;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
-import net.irisshaders.iris.vertices.sodium.terrain.VertexEncoderInterface;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Blocks;
@@ -20,6 +20,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Pseudo
 @Mixin(targets = "net.caffeinemc.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderer", remap = false)
 public abstract class IrisBlockRendererMixin {
+    @Unique
+    private static Object lushGrass$worldRenderingSettings;
+
+    @Unique
+    private static Method lushGrass$getBlockStateIds;
+
+    @Unique
+    private static Method lushGrass$overrideBlock;
+
+    @Unique
+    private static Method lushGrass$restoreBlock;
+
     @Unique
     private int lushGrass$shortGrassMaterialId = -1;
 
@@ -38,12 +50,12 @@ public abstract class IrisBlockRendererMixin {
     ) {
         this.lushGrass$shortGrassMaterialId = -1;
 
-        Object2IntMap<BlockState> blockStateIds = WorldRenderingSettings.INSTANCE.getBlockStateIds();
+        Object2IntMap<BlockState> blockStateIds = lushGrass$getBlockStateIds();
         if (blockStateIds == null) {
             return;
         }
 
-        int materialId = blockStateIds.getInt(Blocks.SHORT_GRASS.defaultBlockState());
+        int materialId = blockStateIds.getInt(Blocks.GRASS.defaultBlockState());
         if (materialId != blockStateIds.defaultReturnValue()) {
             this.lushGrass$shortGrassMaterialId = materialId;
         }
@@ -80,15 +92,75 @@ public abstract class IrisBlockRendererMixin {
             return;
         }
 
-        ((VertexEncoderInterface) (Object) this).overrideBlock(this.lushGrass$shortGrassMaterialId);
-        this.lushGrass$materialOverridden = true;
+        this.lushGrass$materialOverridden = lushGrass$overrideBlock(this, this.lushGrass$shortGrassMaterialId);
     }
 
     @Inject(method = "processQuad", at = @At("TAIL"), require = 0)
     private void lushGrass$afterQuad(@Coerce Object quad, CallbackInfo callback) {
         if (this.lushGrass$materialOverridden) {
-            ((VertexEncoderInterface) (Object) this).restoreBlock();
+            lushGrass$restoreBlock(this);
         }
         this.lushGrass$materialOverridden = false;
+    }
+
+    @Unique
+    @SuppressWarnings("unchecked")
+    private static Object2IntMap<BlockState> lushGrass$getBlockStateIds() {
+        try {
+            if (lushGrass$getBlockStateIds == null || lushGrass$worldRenderingSettings == null) {
+                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+                Class<?> settingsClass = Class.forName(
+                        "net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings",
+                        false,
+                        classLoader
+                );
+                Field instance = settingsClass.getField("INSTANCE");
+                lushGrass$worldRenderingSettings = instance.get(null);
+                lushGrass$getBlockStateIds = settingsClass.getMethod("getBlockStateIds");
+            }
+
+            return (Object2IntMap<BlockState>) lushGrass$getBlockStateIds.invoke(lushGrass$worldRenderingSettings);
+        } catch (ReflectiveOperationException | ClassCastException | LinkageError ignored) {
+            return null;
+        }
+    }
+
+    @Unique
+    private static boolean lushGrass$overrideBlock(Object renderer, int materialId) {
+        try {
+            if (lushGrass$overrideBlock == null) {
+                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+                Class<?> vertexEncoder = Class.forName(
+                        "net.irisshaders.iris.vertices.sodium.terrain.VertexEncoderInterface",
+                        false,
+                        classLoader
+                );
+                lushGrass$overrideBlock = vertexEncoder.getMethod("overrideBlock", int.class);
+            }
+
+            lushGrass$overrideBlock.invoke(renderer, materialId);
+            return true;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return false;
+        }
+    }
+
+    @Unique
+    private static void lushGrass$restoreBlock(Object renderer) {
+        try {
+            if (lushGrass$restoreBlock == null) {
+                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+                Class<?> vertexEncoder = Class.forName(
+                        "net.irisshaders.iris.vertices.sodium.terrain.VertexEncoderInterface",
+                        false,
+                        classLoader
+                );
+                lushGrass$restoreBlock = vertexEncoder.getMethod("restoreBlock");
+            }
+
+            lushGrass$restoreBlock.invoke(renderer);
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            // Optional Iris compatibility; rendering should continue if this hook is unavailable.
+        }
     }
 }

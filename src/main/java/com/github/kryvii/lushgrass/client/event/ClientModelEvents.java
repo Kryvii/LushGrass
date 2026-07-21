@@ -9,19 +9,22 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SnowyDirtBlock;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.neoforge.client.event.ModelEvent;
+import net.minecraftforge.client.event.ModelEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.IEventBus;
 
 public final class ClientModelEvents {
-    private static final ModelResourceLocation FULL_GRASS_BLOCK_MODEL = ModelResourceLocation.standalone(
-            ResourceLocation.fromNamespaceAndPath(LushGrass.MOD_ID, "block/grass_block_full")
+    private static final ModelResourceLocation FULL_GRASS_BLOCK_MODEL = new ModelResourceLocation(
+            new ResourceLocation(LushGrass.MOD_ID, "block/grass_block_full"),
+            "standalone"
     );
-    private static final ModelResourceLocation FULL_SNOWY_GRASS_BLOCK_MODEL = ModelResourceLocation.standalone(
-            ResourceLocation.fromNamespaceAndPath(LushGrass.MOD_ID, "block/grass_block_snow_full")
+    private static final ModelResourceLocation FULL_SNOWY_GRASS_BLOCK_MODEL = new ModelResourceLocation(
+            new ResourceLocation(LushGrass.MOD_ID, "block/grass_block_snow_full"),
+            "standalone"
     );
-    private static final ModelResourceLocation GRASS_TUFT_MODEL = ModelResourceLocation.standalone(
-            ResourceLocation.fromNamespaceAndPath(LushGrass.MOD_ID, "block/grass_tuft")
+    private static final ModelResourceLocation GRASS_TUFT_MODEL = new ModelResourceLocation(
+            new ResourceLocation(LushGrass.MOD_ID, "block/grass_tuft"),
+            "standalone"
     );
 
     public static void register(IEventBus modEventBus) {

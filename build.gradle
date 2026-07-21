@@ -1,6 +1,6 @@
 plugins {
     id 'java-library'
-    id 'net.neoforged.moddev' version '2.0.141'
+    id 'net.minecraftforge.gradle' version '6.0.54'
     id 'idea'
 }
 
@@ -13,50 +13,29 @@ base {
     archivesName = mod_id
 }
 
-// Minecraft 1.21.1 uses Java 21.
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+// Minecraft 1.20.1 uses Java 17.
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-neoForge {
-    version = project.neo_version
-
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+    copyIdeResources = true
 
     runs {
-        client {
-            client()
-            gameDirectory = project.file('run/client')
-        }
-
-        server {
-            server()
-            gameDirectory = project.file('run/server')
-        }
-
-        data {
-            data()
-            programArguments.addAll '--mod', project.mod_id, '--all',
-                    '--output', file('src/generated/resources/').getAbsolutePath(),
-                    '--existing', file('src/main/resources/').getAbsolutePath()
-        }
-
         configureEach {
-            jvmArguments = [
-                    '-XX:+IgnoreUnrecognizedVMOptions',
-                    '-XX:+AllowEnhancedClassRedefinition'
-            ]
+            workingDirectory project.file('run')
 
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
-            logLevel = org.slf4j.event.Level.INFO
-        }
-    }
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'info'
 
-    mods {
-        "${mod_id}" {
-            sourceSet(sourceSets.main)
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
         }
+
+        client {}
+        server {}
     }
 }
 
@@ -80,15 +59,15 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'curse.maven:irisshaders-455508:8242804'
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 }
 
 var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
     var replaceProperties = [
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
-            neo_version            : neo_version,
-            neo_version_range      : project.findProperty('neo_version_range') ?: '',
+            forge_version          : forge_version,
+            forge_version_range    : forge_version_range,
             loader_version_range   : loader_version_range,
             mod_id                 : mod_id,
             mod_name               : mod_name,
@@ -107,7 +86,6 @@ var generateModMetadata = tasks.register('generateModMetadata', ProcessResources
 }
 
 sourceSets.main.resources.srcDir generateModMetadata
-neoForge.ideSyncTask generateModMetadata
 
 tasks.withType(Jar).configureEach {
     from(rootProject.file('LICENSE')) {
@@ -129,9 +107,13 @@ tasks.withType(Jar).configureEach {
     }
 }
 
+tasks.named('jar', Jar).configure {
+    finalizedBy 'reobfJar'
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 21
+    options.release = 17
 }
 
 tasks.withType(org.gradle.api.tasks.bundling.AbstractArchiveTask).configureEach {
