@@ -14,18 +14,12 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 
 public final class ClientModelEvents {
-    private static final ModelResourceLocation FULL_GRASS_BLOCK_MODEL = new ModelResourceLocation(
-            new ResourceLocation(LushGrass.MOD_ID, "block/grass_block_full"),
-            "standalone"
-    );
-    private static final ModelResourceLocation FULL_SNOWY_GRASS_BLOCK_MODEL = new ModelResourceLocation(
-            new ResourceLocation(LushGrass.MOD_ID, "block/grass_block_snow_full"),
-            "standalone"
-    );
-    private static final ModelResourceLocation GRASS_TUFT_MODEL = new ModelResourceLocation(
-            new ResourceLocation(LushGrass.MOD_ID, "block/grass_tuft"),
-            "standalone"
-    );
+    private static final ResourceLocation FULL_GRASS_BLOCK_MODEL =
+            new ResourceLocation(LushGrass.MOD_ID, "block/grass_block_full");
+    private static final ResourceLocation FULL_SNOWY_GRASS_BLOCK_MODEL =
+            new ResourceLocation(LushGrass.MOD_ID, "block/grass_block_snow_full");
+    private static final ResourceLocation GRASS_TUFT_MODEL =
+            new ResourceLocation(LushGrass.MOD_ID, "block/grass_tuft");
 
     public static void register(IEventBus modEventBus) {
         modEventBus.addListener(ClientModelEvents::registerAdditionalModels);
