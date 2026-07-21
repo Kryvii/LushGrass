@@ -70,31 +70,6 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:oculus-581495:${oculus_curseforge_file_id}")
 }
 
-var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
-    var replaceProperties = [
-            minecraft_version      : minecraft_version,
-            minecraft_version_range: minecraft_version_range,
-            forge_version          : forge_version,
-            forge_version_range    : forge_version_range,
-            loader_version_range   : loader_version_range,
-            mod_id                 : mod_id,
-            mod_name               : mod_name,
-            mod_license            : mod_license,
-            mod_version            : mod_version,
-            mod_authors            : project.findProperty('mod_authors') ?: '',
-            mod_description        : project.findProperty('mod_description') ?: '',
-            mod_display_url        : mod_display_url,
-            mod_issue_tracker_url  : mod_issue_tracker_url
-    ]
-
-    inputs.properties replaceProperties
-    expand replaceProperties
-    from 'src/main/templates'
-    into 'build/generated/sources/modMetadata'
-}
-
-sourceSets.main.resources.srcDir generateModMetadata
-
 tasks.withType(Jar).configureEach {
     from(rootProject.file('LICENSE')) {
         into 'META-INF'
