@@ -7,7 +7,7 @@
 Lush Grass is a lightweight, vanilla-style client visual mod for Minecraft
 1.20.1 on Forge.
 
-![Lush Grass before and after comparison](docs/images/before-after.png)
+![Lush Grass before and after comparison](docs/images/before-after—_1.png)
 
 ## Features
 
