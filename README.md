@@ -11,9 +11,16 @@ Lush Grass is a lightweight, vanilla-style client visual mod for Minecraft
 
 ## Features
 
-- Improves the appearance of vanilla grass blocks.
-- Adds configurable grass tufts to unobstructed grass blocks.
-- Supports customization through resource packs.
+- Enhances vanilla grass blocks so grasslands look lusher while retaining the
+  vanilla style.
+- Provides a connected-texture appearance for grass blocks, creating more
+  natural visual transitions between adjacent grass blocks.
+- Provides complete snowy grass-block coverage for a cleaner appearance in
+  snowy environments.
+- Renders grass tufts on unobstructed grass blocks to add depth and variety to
+  grasslands.
+- Provides client-side configuration with independent controls for grass-block
+  coverage and grass-tuft rendering.
 
 ## Requirements
 
