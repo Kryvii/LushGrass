@@ -8,41 +8,22 @@ import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 public final class LushGrassMixinPlugin implements IMixinConfigPlugin {
-    private Boolean shaderMaterialOverridesAvailable;
+    private Boolean oculusMaterialOverridesAvailable;
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if (this.shaderMaterialOverridesAvailable == null) {
-            this.shaderMaterialOverridesAvailable = supportsShaderMaterialOverrides();
+        if (this.oculusMaterialOverridesAvailable == null) {
+            this.oculusMaterialOverridesAvailable = supportsOculusMaterialOverrides();
         }
-        return this.shaderMaterialOverridesAvailable;
+        return this.oculusMaterialOverridesAvailable;
     }
 
-    private static boolean supportsShaderMaterialOverrides() {
-        if (!hasAnyClassResource(
-                "net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings",
-                "net.coderbot.iris.shaderpack.materialmap.WorldRenderingSettings",
-                "net.coderbot.iris.block_rendering.BlockRenderingSettings"
-        )) {
-            return false;
-        }
-
-        for (String className : new String[] {
-                "net.irisshaders.iris.vertices.sodium.terrain.VertexEncoderInterface",
-                "net.coderbot.iris.vertices.sodium.terrain.VertexEncoderInterface"
-        }) {
-            try {
-                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-                Class<?> vertexEncoder = Class.forName(className, false, classLoader);
-                vertexEncoder.getMethod("overrideBlock", int.class);
-                vertexEncoder.getMethod("restoreBlock");
-                return true;
-            } catch (ClassNotFoundException | NoSuchMethodException | LinkageError ignored) {
-                // Try the next Iris/Oculus package name.
-            }
-        }
-
-        return false;
+    private static boolean supportsOculusMaterialOverrides() {
+        return hasClassResource("me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderer")
+                && hasAnyClassResource(
+                        "net.irisshaders.iris.compat.sodium.impl.block_context.ChunkBuildBuffersExt",
+                        "net.coderbot.iris.compat.sodium.impl.block_context.ChunkBuildBuffersExt"
+                );
     }
 
     private static boolean hasClassResource(String className) {

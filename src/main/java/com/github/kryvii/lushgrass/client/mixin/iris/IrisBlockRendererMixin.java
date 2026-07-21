@@ -1,12 +1,7 @@
 package com.github.kryvii.lushgrass.client.mixin.iris;
 
-import com.github.kryvii.lushgrass.client.compat.sodium.QuadTintIndexAccess;
-import com.github.kryvii.lushgrass.client.model.GrassBlockTuftModel;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.BlockPos;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,164 +13,113 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Pseudo
-@Mixin(targets = "net.caffeinemc.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderer", remap = false)
+@Mixin(targets = "me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderer", remap = false)
 public abstract class IrisBlockRendererMixin {
     @Unique
-    private static final String[] WORLD_SETTINGS_CLASSES = {
-            "net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings",
-            "net.coderbot.iris.shaderpack.materialmap.WorldRenderingSettings",
-            "net.coderbot.iris.block_rendering.BlockRenderingSettings"
-    };
+    private static Method lushGrass$contextState;
 
     @Unique
-    private static final String[] VERTEX_ENCODER_CLASSES = {
-            "net.irisshaders.iris.vertices.sodium.terrain.VertexEncoderInterface",
-            "net.coderbot.iris.vertices.sodium.terrain.VertexEncoderInterface"
-    };
+    private static Method lushGrass$contextRenderLayer;
 
     @Unique
-    private static Object lushGrass$worldRenderingSettings;
+    private static Method lushGrass$setMaterialId;
 
     @Unique
-    private static Method lushGrass$getBlockStateIds;
-
-    @Unique
-    private static Method lushGrass$overrideBlock;
-
-    @Unique
-    private static Method lushGrass$restoreBlock;
-
-    @Unique
-    private int lushGrass$shortGrassMaterialId = -1;
-
-    @Unique
-    private boolean lushGrass$renderingGrassBlock;
+    private BlockState lushGrass$originalState;
 
     @Unique
     private boolean lushGrass$materialOverridden;
 
-    @Inject(method = "prepare", at = @At("HEAD"), require = 0)
-    private void lushGrass$resolveShortGrassMaterial(
-            @Coerce Object buffers,
-            @Coerce Object level,
-            @Coerce Object collector,
-            CallbackInfo callback
-    ) {
-        this.lushGrass$shortGrassMaterialId = -1;
-
-        Object2IntMap<BlockState> blockStateIds = lushGrass$getBlockStateIds();
-        if (blockStateIds == null) {
-            return;
-        }
-
-        int materialId = blockStateIds.getInt(Blocks.GRASS.defaultBlockState());
-        if (materialId != blockStateIds.defaultReturnValue()) {
-            this.lushGrass$shortGrassMaterialId = materialId;
-        }
-    }
-
     @Inject(method = "renderModel", at = @At("HEAD"), require = 0)
     private void lushGrass$beginModel(
-            BakedModel model,
-            BlockState state,
-            BlockPos pos,
-            BlockPos origin,
+            @Coerce Object context,
+            @Coerce Object buffers,
             CallbackInfo callback
     ) {
-        this.lushGrass$renderingGrassBlock = state.is(Blocks.GRASS_BLOCK);
-    }
+        this.lushGrass$materialOverridden = false;
+        this.lushGrass$originalState = null;
 
-    @Inject(method = "renderModel", at = @At("TAIL"), require = 0)
-    private void lushGrass$endModel(
-            BakedModel model,
-            BlockState state,
-            BlockPos pos,
-            BlockPos origin,
-            CallbackInfo callback
-    ) {
-        this.lushGrass$renderingGrassBlock = false;
-    }
-
-    @Inject(method = "processQuad", at = @At("HEAD"), require = 0)
-    private void lushGrass$beforeQuad(@Coerce Object quad, CallbackInfo callback) {
-        if (!this.lushGrass$renderingGrassBlock
-                || this.lushGrass$shortGrassMaterialId == -1
-                || !(quad instanceof QuadTintIndexAccess tintAccess)
-                || tintAccess.lushGrass$getTintIndex() != GrassBlockTuftModel.TUFT_TINT_INDEX) {
+        BlockState state = lushGrass$getState(context);
+        RenderType renderLayer = lushGrass$getRenderLayer(context);
+        if (state == null || !state.is(Blocks.GRASS_BLOCK) || renderLayer != RenderType.cutout()) {
             return;
         }
 
-        this.lushGrass$materialOverridden = lushGrass$overrideBlock(this, this.lushGrass$shortGrassMaterialId);
+        if (lushGrass$setMaterial(buffers, Blocks.GRASS.defaultBlockState(), (byte) 0)) {
+            this.lushGrass$originalState = state;
+            this.lushGrass$materialOverridden = true;
+        }
     }
 
-    @Inject(method = "processQuad", at = @At("TAIL"), require = 0)
-    private void lushGrass$afterQuad(@Coerce Object quad, CallbackInfo callback) {
-        if (this.lushGrass$materialOverridden) {
-            lushGrass$restoreBlock(this);
+    @Inject(method = "renderModel", at = @At("RETURN"), require = 0)
+    private void lushGrass$endModel(
+            @Coerce Object context,
+            @Coerce Object buffers,
+            CallbackInfo callback
+    ) {
+        if (this.lushGrass$materialOverridden && this.lushGrass$originalState != null) {
+            lushGrass$setMaterial(
+                    buffers,
+                    this.lushGrass$originalState,
+                    (byte) 0
+            );
         }
         this.lushGrass$materialOverridden = false;
+        this.lushGrass$originalState = null;
     }
 
     @Unique
-    @SuppressWarnings("unchecked")
-    private static Object2IntMap<BlockState> lushGrass$getBlockStateIds() {
+    private static BlockState lushGrass$getState(Object context) {
         try {
-            if (lushGrass$getBlockStateIds == null || lushGrass$worldRenderingSettings == null) {
-                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-                Class<?> settingsClass = lushGrass$findClass(classLoader, WORLD_SETTINGS_CLASSES);
-                Field instance = settingsClass.getField("INSTANCE");
-                lushGrass$worldRenderingSettings = instance.get(null);
-                lushGrass$getBlockStateIds = settingsClass.getMethod("getBlockStateIds");
+            if (lushGrass$contextState == null) {
+                lushGrass$contextState = context.getClass().getMethod("state");
             }
-
-            return (Object2IntMap<BlockState>) lushGrass$getBlockStateIds.invoke(lushGrass$worldRenderingSettings);
+            return (BlockState) lushGrass$contextState.invoke(context);
         } catch (ReflectiveOperationException | ClassCastException | LinkageError ignored) {
             return null;
         }
     }
 
     @Unique
-    private static boolean lushGrass$overrideBlock(Object renderer, int materialId) {
+    private static RenderType lushGrass$getRenderLayer(Object context) {
         try {
-            if (lushGrass$overrideBlock == null) {
-                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-                Class<?> vertexEncoder = lushGrass$findClass(classLoader, VERTEX_ENCODER_CLASSES);
-                lushGrass$overrideBlock = vertexEncoder.getMethod("overrideBlock", int.class);
+            if (lushGrass$contextRenderLayer == null) {
+                lushGrass$contextRenderLayer = context.getClass().getMethod("renderLayer");
+            }
+            return (RenderType) lushGrass$contextRenderLayer.invoke(context);
+        } catch (ReflectiveOperationException | ClassCastException | LinkageError ignored) {
+            return null;
+        }
+    }
+
+    @Unique
+    private static boolean lushGrass$setMaterial(Object buffers, BlockState state, byte lightEmission) {
+        try {
+            if (lushGrass$setMaterialId == null) {
+                try {
+                    lushGrass$setMaterialId = buffers.getClass().getMethod(
+                            "iris$setMaterialId",
+                            BlockState.class,
+                            short.class,
+                            byte.class
+                    );
+                } catch (NoSuchMethodException ignored) {
+                    lushGrass$setMaterialId = buffers.getClass().getMethod(
+                            "iris$setMaterialId",
+                            BlockState.class,
+                            short.class
+                    );
+                }
             }
 
-            lushGrass$overrideBlock.invoke(renderer, materialId);
+            if (lushGrass$setMaterialId.getParameterCount() == 3) {
+                lushGrass$setMaterialId.invoke(buffers, state, (short) -1, lightEmission);
+            } else {
+                lushGrass$setMaterialId.invoke(buffers, state, (short) -1);
+            }
             return true;
         } catch (ReflectiveOperationException | LinkageError ignored) {
             return false;
         }
-    }
-
-    @Unique
-    private static void lushGrass$restoreBlock(Object renderer) {
-        try {
-            if (lushGrass$restoreBlock == null) {
-                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-                Class<?> vertexEncoder = lushGrass$findClass(classLoader, VERTEX_ENCODER_CLASSES);
-                lushGrass$restoreBlock = vertexEncoder.getMethod("restoreBlock");
-            }
-
-            lushGrass$restoreBlock.invoke(renderer);
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            // Optional Iris compatibility; rendering should continue if this hook is unavailable.
-        }
-    }
-
-    @Unique
-    private static Class<?> lushGrass$findClass(ClassLoader classLoader, String[] classNames)
-            throws ClassNotFoundException {
-        ClassNotFoundException missing = null;
-        for (String className : classNames) {
-            try {
-                return Class.forName(className, false, classLoader);
-            } catch (ClassNotFoundException exception) {
-                missing = exception;
-            }
-        }
-        throw missing == null ? new ClassNotFoundException() : missing;
     }
 }

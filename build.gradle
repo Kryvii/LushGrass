@@ -26,6 +26,9 @@ minecraft {
 
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'info'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile',
+                    file("${buildDir}/createSrgToMcp/output.srg").absolutePath
 
             mods {
                 "${mod_id}" {
@@ -60,6 +63,10 @@ repositories {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    // Optional compatibility mods for development runs. They are not bundled in the output jar.
+    runtimeOnly fg.deobf("curse.maven:embeddium-908741:${embeddium_curseforge_file_id}")
+    runtimeOnly fg.deobf("curse.maven:oculus-581495:${oculus_curseforge_file_id}")
 }
 
 var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {

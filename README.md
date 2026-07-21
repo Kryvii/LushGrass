@@ -23,9 +23,8 @@ Lush Grass is a lightweight, vanilla-style client visual mod for Minecraft
 
 Server installation is not required.
 
-Oculus and Embeddium are optional. When both are installed, Lush Grass keeps the
-additional grass geometry shader-aware where the available Oculus/Sodium hooks
-support per-quad material overrides.
+Oculus and Embeddium are optional. When both are installed, Lush Grass marks its
+additional grass geometry as vanilla short grass for shader material mapping.
 
 ## Configuration
 
