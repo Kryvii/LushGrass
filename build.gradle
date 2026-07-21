@@ -13,7 +13,6 @@ base {
     archivesName = mod_id
 }
 
-// Minecraft 1.20.1 uses Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 minecraft {
@@ -23,6 +22,8 @@ minecraft {
     runs {
         configureEach {
             workingDirectory project.file('run')
+
+            args '--mixin', 'lush_grass.client.mixins.json'
 
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'info'
@@ -64,7 +65,7 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    // Optional compatibility mods for development runs. They are not bundled in the output jar.
+    compileOnly fg.deobf("curse.maven:embeddium-908741:${embeddium_curseforge_file_id}")
     runtimeOnly fg.deobf("curse.maven:embeddium-908741:${embeddium_curseforge_file_id}")
     runtimeOnly fg.deobf("curse.maven:oculus-581495:${oculus_curseforge_file_id}")
 }
@@ -109,7 +110,8 @@ tasks.withType(Jar).configureEach {
                 'Specification-Version' : mod_version,
                 'Implementation-Title'  : mod_name,
                 'Implementation-Vendor' : mod_authors,
-                'Implementation-Version': mod_version
+                'Implementation-Version': mod_version,
+                'MixinConfigs'          : 'lush_grass.client.mixins.json'
         ])
     }
 }

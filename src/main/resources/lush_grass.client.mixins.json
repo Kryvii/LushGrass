@@ -5,7 +5,7 @@
   "package": "com.github.kryvii.lushgrass.client.mixin",
   "plugin": "com.github.kryvii.lushgrass.mixin.LushGrassMixinPlugin",
   "client": [
-    "iris.IrisBlockRendererMixin"
+    "oculus.OculusBlockRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

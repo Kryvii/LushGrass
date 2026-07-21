@@ -13,9 +13,6 @@ logoFile="icon.png"
 displayTest="IGNORE_SERVER_VERSION"
 description='''${mod_description}'''
 
-[[mixins]]
-config="lush_grass.client.mixins.json"
-
 [[dependencies.${mod_id}]]
 modId="forge"
 mandatory=true

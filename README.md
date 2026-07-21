@@ -11,22 +11,33 @@ Lush Grass is a lightweight, vanilla-style client visual mod for Minecraft
 
 ## Features
 
-- Improves the appearance of vanilla grass blocks.
-- Adds configurable grass tufts to unobstructed grass blocks.
-- Supports customization through resource packs.
+- Enhances vanilla grass blocks so grasslands look lusher while retaining the
+  vanilla style.
+- Provides a connected-texture appearance for grass blocks, creating more
+  natural visual transitions between adjacent grass blocks.
+- Provides complete snowy grass-block coverage for a cleaner appearance in
+  snowy environments.
+- Renders grass tufts on unobstructed grass blocks to add depth and variety to
+  grasslands.
+- Provides client-side configuration with independent controls for grass-block
+  coverage and grass-tuft rendering.
+- Integrates with Oculus and Embeddium so added grass tufts use vanilla grass
+  shader materials, including shader-pack vegetation movement where supported.
 
 ## Requirements
 
-- Minecraft 1.20.1
-- Forge 47.2.0 or newer for Minecraft 1.20.1
-- Java 17
+- Forge 47.2.0 or newer for Minecraft 1.20.1.
 
 Server installation is not required.
 
-Oculus and Embeddium are optional. When both are installed, Lush Grass marks its
-additional grass geometry as vanilla short grass for shader material mapping.
+Rubidium and Embeddium are alternatives and should not be installed together.
+When Oculus and Embeddium are both installed, Lush Grass marks its additional
+grass geometry as vanilla short grass for shader material mapping.
 
 ## Configuration
+
+Open **Mods > Lush Grass > Config**, then select **Visuals** to change the two
+rendering options in game.
 
 The client configuration is stored in `config/lush_grass-client.toml`.
 

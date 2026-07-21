@@ -13,23 +13,12 @@ public final class ClientConfig {
 
     static {
         CLIENT_BUILDER
-                .comment("Visual settings.")
                 .translation(TRANSLATION_PREFIX);
         CLIENT_BUILDER.push("visuals");
         FULL_GRASS_BLOCK_COVERAGE = CLIENT_BUILDER
-                .comment(
-                        "Name: Better Grass Blocks",
-                        "Description: Improves the appearance of vanilla grass blocks.",
-                        "true: enabled; false: disabled."
-                )
                 .translation(TRANSLATION_PREFIX + ".full_grass_block_coverage")
                 .define("full_grass_block_coverage", true);
         RENDER_GRASS_TUFTS = CLIENT_BUILDER
-                .comment(
-                        "Name: Lusher Grass",
-                        "Description: Renders short grass on unobstructed vanilla grass blocks to make grasslands look lusher.",
-                        "true: enabled; false: disabled."
-                )
                 .translation(TRANSLATION_PREFIX + ".render_grass_tufts")
                 .define("render_grass_tufts", true);
         CLIENT_BUILDER.pop();
