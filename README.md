@@ -30,18 +30,6 @@ Lush Grass is a lightweight, vanilla-style client visual mod for Minecraft
 - Fabric Loader 0.15.11 or newer
 - Fabric API 0.92.2+1.20.1 or newer
 
-Server installation is not required.
-
-## Optional Compatibility
-
-- Mod Menu 7.2.2 provides the in-game configuration entry.
-- Sodium 0.5.13 and Iris 1.7.6 are supported and tested.
-- Indium 1.0.36 is compatible but not required.
-
-Sodium, Iris, Mod Menu, and Indium are all optional. When Sodium and Iris are
-installed, Lush Grass marks its additional grass geometry as vanilla short grass
-for shader material mapping.
-
 ## Configuration
 
 With Mod Menu installed, open **Mods > Lush Grass > Configure**, then select
